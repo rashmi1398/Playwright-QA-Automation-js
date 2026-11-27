@@ -1,3 +1,4 @@
+
 // @ts-check
 import { defineConfig, devices } from '@playwright/test';
 
@@ -9,31 +10,41 @@ export default defineConfig({
   workers: process.env.CI ? 1 : undefined,
   reporter: 'html',
 
-  timeout: 30000,            // per-test timeout (top level)
+  timeout: 30000,
+
   expect: {
-    timeout: 10000,          // assertion timeout (top level)
+    timeout: 10000,
   },
 
   use: {
     trace: 'on',
-    headless: false,
-    channel: 'chromium',   // uses the new headless mode, same engine as headed
-    //viewport: { width: 1280, height: 720 },
+    headless: !!process.env.CI,
+    channel: 'chromium',
   },
 
   projects: [
-    //{
-     //name: 'setup',
-     //testMatch: '**/authsetup.spec.js',
-    //},
+    ...(process.env.CI ? [
+      {
+        name: 'setup',
+        testMatch: '**/.auth/authsetup.spec.js',
+
+      }
+    ] : []),
+    // Actual application tests
+
     {
       name: 'chromium',
-      use: { ...devices['Desktop Chrome'], 
-        //storageState:'playwright/.auth/user.json',
+      use: {
+        ...devices['Desktop Chrome']
       },
-      //dependencies:['setup'],
-      //testIgnore:['**/authsetup.spec.js',
-      //'**/practicetests']
-    },
-  ],
+      dependencies: process.env.CI ? ['setup'] : [],
+      testIgnore: [
+        '**/.auth/authsetup.spec.js',
+        ...(process.env.CI ? ['**/practicetests/**'] : [])
+      ]
+    }
+
+  ]
+
+
 });
